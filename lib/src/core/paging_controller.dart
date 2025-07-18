@@ -9,8 +9,8 @@ typedef NextPageKeyCallback<PageKeyType, ItemType> = PageKeyType? Function(
     PagingState<PageKeyType, ItemType> state);
 
 /// A callback to fetch a page.
-typedef FetchPageCallback<PageKeyType, ItemType> = FutureOr<List<ItemType>>
-    Function(PageKeyType pageKey);
+typedef FetchPageCallback<PageKeyType, ItemType> = FutureOr<List<ItemType>> Function(
+    PageKeyType pageKey);
 
 /// A controller to handle a [PagingState].
 ///
@@ -119,6 +119,9 @@ class PagingController<PageKeyType, ItemType>
   void refresh() {
     operation = null;
     value = value.reset();
+
+    // Trigger a fetch of the first page.
+    fetchNextPage();
   }
 
   /// Cancels the current fetch operation.

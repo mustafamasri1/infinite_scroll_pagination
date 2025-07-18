@@ -4,14 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:infinite_scroll_pagination/src/base/paged_child_builder_delegate.dart';
 import 'package:infinite_scroll_pagination/src/core/extensions.dart';
-
+import 'package:infinite_scroll_pagination/src/core/paging_state.dart';
+import 'package:infinite_scroll_pagination/src/core/paging_status.dart';
 import 'package:infinite_scroll_pagination/src/defaults/first_page_error_indicator.dart';
 import 'package:infinite_scroll_pagination/src/defaults/first_page_progress_indicator.dart';
 import 'package:infinite_scroll_pagination/src/defaults/new_page_error_indicator.dart';
 import 'package:infinite_scroll_pagination/src/defaults/new_page_progress_indicator.dart';
 import 'package:infinite_scroll_pagination/src/defaults/no_items_found_indicator.dart';
-import 'package:infinite_scroll_pagination/src/core/paging_state.dart';
-import 'package:infinite_scroll_pagination/src/core/paging_status.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 /// Called to request a new page of data.
@@ -112,17 +111,14 @@ class _PagedLayoutBuilderState<PageKeyType, ItemType>
   NextPageCallback get _fetchNextPage =>
       // We make sure to only schedule the fetch after the current build is done.
       // This is important to prevent recursive builds.
-      () => WidgetsBinding.instance
-          .addPostFrameCallback((_) {
-            if(!mounted) return;
+      () => WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
             widget.fetchNextPage();
           });
 
-  PagedChildBuilderDelegate<ItemType> get _builderDelegate =>
-      widget.builderDelegate;
+  PagedChildBuilderDelegate<ItemType> get _builderDelegate => widget.builderDelegate;
 
-  bool get _shrinkWrapFirstPageIndicators =>
-      widget.shrinkWrapFirstPageIndicators;
+  bool get _shrinkWrapFirstPageIndicators => widget.shrinkWrapFirstPageIndicators;
 
   PagedLayoutProtocol get _layoutProtocol => widget.layoutProtocol;
 
@@ -143,15 +139,12 @@ class _PagedLayoutBuilderState<PageKeyType, ItemType>
       (_) => const FirstPageProgressIndicator();
 
   WidgetBuilder get _newPageProgressIndicatorBuilder =>
-      _builderDelegate.newPageProgressIndicatorBuilder ??
-      (_) => const NewPageProgressIndicator();
+      _builderDelegate.newPageProgressIndicatorBuilder ?? (_) => const NewPageProgressIndicator();
 
   WidgetBuilder get _noItemsFoundIndicatorBuilder =>
-      _builderDelegate.noItemsFoundIndicatorBuilder ??
-      (_) => const NoItemsFoundIndicator();
+      _builderDelegate.noItemsFoundIndicatorBuilder ?? (_) => const NoItemsFoundIndicator();
 
-  WidgetBuilder? get _noMoreItemsIndicatorBuilder =>
-      _builderDelegate.noMoreItemsIndicatorBuilder;
+  WidgetBuilder? get _noMoreItemsIndicatorBuilder => _builderDelegate.noMoreItemsIndicatorBuilder;
 
   int get _invisibleItemsThreshold => _builderDelegate.invisibleItemsThreshold;
 
@@ -163,21 +156,10 @@ class _PagedLayoutBuilderState<PageKeyType, ItemType>
   bool _hasRequestedNextPage = false;
 
   @override
-  void initState() {
-    super.initState();
-    if (_state.status == PagingStatus.loadingFirstPage) {
-      _fetchNextPage();
-    }
-  }
-
-  @override
-  void didUpdateWidget(
-      covariant PagedLayoutBuilder<PageKeyType, ItemType> oldWidget) {
+  void didUpdateWidget(covariant PagedLayoutBuilder<PageKeyType, ItemType> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state != widget.state) {
-      if (_state.status == PagingStatus.loadingFirstPage) {
-        _fetchNextPage();
-      } else if (_state.status == PagingStatus.ongoing) {
+      if (_state.status == PagingStatus.ongoing) {
         _hasRequestedNextPage = false;
       }
     }
@@ -217,7 +199,7 @@ class _PagedLayoutBuilderState<PageKeyType, ItemType>
             (context, index) => _buildListItemWidget(
               context,
               index,
-              _state.items!,
+              _state.items ?? [],
             ),
             _itemCount,
             _newPageProgressIndicatorBuilder,
@@ -268,7 +250,11 @@ class _PagedLayoutBuilderState<PageKeyType, ItemType>
         _fetchNextPage();
       }
     }
-
+    if (index >= itemList.length) {
+      // If the index is out of bounds, we return an empty container.
+      // This can happen if the list is empty or if the index exceeds the number of items.
+      return const SizedBox.shrink();
+    }
     final item = itemList[index];
     return _builderDelegate.itemBuilder(context, item, index);
   }
@@ -324,8 +310,7 @@ class _FirstPageStatusIndicatorBuilder extends StatelessWidget {
               hasScrollBody: false,
               child: builder(context),
             ),
-      PagedLayoutProtocol.box =>
-        shrinkWrap ? builder(context) : Center(child: builder(context)),
+      PagedLayoutProtocol.box => shrinkWrap ? builder(context) : Center(child: builder(context)),
     };
   }
 }
